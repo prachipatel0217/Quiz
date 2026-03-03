@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>QuizPro – Dashboard</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+  <!-- Loading -->
+  <div id="loading-screen">
+    <div class="loader-logo">⚡ QuizPro</div>
+    <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <span class="navbar-brand">⚡ QuizPro</span>
+    <div class="navbar-actions">
+      <span class="nav-user" id="nav-user">👤 User</span>
+      <button class="icon-btn" id="sound-btn"   title="Toggle sound">🔊</button>
+      <button class="icon-btn" id="theme-toggle" title="Toggle dark mode">🌙</button>
+      <button class="icon-btn" id="logout-btn"   title="Logout">🚪</button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="dashboard-hero page-enter">
+    <p class="hero-greeting">Welcome back, <span id="hero-name">User</span> 👋</p>
+    <p class="hero-sub">Choose a quiz below and challenge yourself today.</p>
+  </section>
+
+  <!-- Stats strip -->
+  <div class="stats-strip">
+    <div class="stat-card">
+      <div class="stat-label">Quizzes Taken</div>
+      <div class="stat-value" id="stat-taken">0</div>
+      <span class="stat-badge" style="background:var(--primary);color:#fff;">Total</span>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Best Score</div>
+      <div class="stat-value" id="stat-best">—</div>
+      <span class="stat-badge" style="background:var(--success);color:#166534;">All Time</span>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Avg. Score</div>
+      <div class="stat-value" id="stat-avg">—</div>
+      <span class="stat-badge" style="background:var(--warning);color:#92400e;">Avg</span>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Pass Rate</div>
+      <div class="stat-value" id="stat-pass">—</div>
+      <span class="stat-badge" style="background:var(--accent);color:#9d174d;">Rate</span>
+    </div>
+  </div>
+
+  <!-- Quiz category cards -->
+  <p class="section-title">📚 Available Quizzes</p>
+
+  <div class="quiz-grid" id="quiz-grid">
+    <!-- Populated by JS -->
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="leaderboard-section">
+    <p class="section-title">🏆 Leaderboard</p>
+    <div class="card mt-2">
+      <div class="lb-table-wrap" style="padding:1.2rem">
+        <table class="lb-table">
+          <thead>
+            <tr>
+              <th>#</th><th>Player</th><th>Quiz</th><th>Score</th><th>Pct</th>
+            </tr>
+          </thead>
+          <tbody id="leaderboard-body">
+            <tr><td colspan="5" class="lb-empty">No entries yet — be the first! 🚀</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/data.js"></script>
+  <script>
+    setTimeout(() => document.getElementById("loading-screen").classList.add("hidden"), 1400);
+
+    AUTH.requireAuth();
+    const user = AUTH.getUser();
+
+    // Apply saved theme
+    const savedTheme = localStorage.getItem("quizTheme") || "light";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    document.getElementById("theme-toggle").textContent = savedTheme === "dark" ? "☀️" : "🌙";
+
+    // User labels
+    document.getElementById("nav-user").textContent = "👤 " + user;
+    document.getElementById("hero-name").textContent = user;
+
+    // Stats
+    const lb = getLeaderboard();
+    const myEntries = lb.filter(e => e.username === user);
+    document.getElementById("stat-taken").textContent = myEntries.length;
+    if (myEntries.length) {
+      const best = Math.max(...myEntries.map(e => e.pct));
+      const avg  = Math.round(myEntries.reduce((s,e) => s + e.pct, 0) / myEntries.length);
+      const passes = myEntries.filter(e => e.pct >= 60).length;
+      document.getElementById("stat-best").textContent = best + "%";
+      document.getElementById("stat-avg").textContent  = avg  + "%";
+      document.getElementById("stat-pass").textContent = Math.round(passes/myEntries.length*100)+"%";
+    }
+
+    // Quiz cards
+    const grid = document.getElementById("quiz-grid");
+    QUIZ_DATA.categories.forEach(cat => {
+      grid.innerHTML += `
+        <div class="quiz-card card" onclick="startQuiz('${cat.id}')">
+          <div class="quiz-card-header" style="background:${cat.gradient}">
+            <span class="quiz-card-icon">${cat.icon}</span>
+            <div class="quiz-card-title">${cat.title}</div>
+            <div class="quiz-card-desc">${cat.description}</div>
+            <div class="quiz-card-wave">
+              <svg viewBox="0 0 200 28" preserveAspectRatio="none">
+                <path d="M0,20 C50,0 150,36 200,14 L200,28 L0,28 Z" fill="var(--card)"/>
+              </svg>
+            </div>
+          </div>
+          <div class="quiz-card-body">
+            <div class="quiz-meta">
+              <span>📝 ${cat.questions.length} Questions</span>
+              <span>⏱ ${Math.floor(cat.time/60)} min</span>
+              <span>🎯 Pass: 60%</span>
+            </div>
+            <button class="btn btn-primary quiz-start-btn">Start Quiz →</button>
+          </div>
+        </div>`;
+    });
+
+    // Leaderboard
+    const lbBody = document.getElementById("leaderboard-body");
+    const entries = lb.slice(0, 10);
+    if (entries.length) {
+      lbBody.innerHTML = entries.map((e,i) => `
+        <tr class="${i===0?'lb-top':''}">
+          <td><span class="lb-rank">${i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</span></td>
+          <td class="lb-name">${e.username}</td>
+          <td style="font-size:.78rem;color:var(--text-muted)">${e.category}</td>
+          <td><span class="lb-score">${e.score}/${e.total}</span></td>
+          <td><span class="lb-pct ${e.pct>=60?'pass':'fail'}">${e.pct}%</span></td>
+        </tr>`).join("");
+    }
+
+    function startQuiz(catId) {
+      localStorage.setItem("quizCategory", catId);
+      window.location.href = "quiz.html";
+    }
+
+    // Theme toggle
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+      const cur = document.documentElement.getAttribute("data-theme");
+      const nxt = cur === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", nxt);
+      localStorage.setItem("quizTheme", nxt);
+      document.getElementById("theme-toggle").textContent = nxt === "dark" ? "☀️" : "🌙";
+    });
+
+    // Sound toggle
+    let soundOn = localStorage.getItem("quizSound") !== "false";
+    document.getElementById("sound-btn").textContent = soundOn ? "🔊" : "🔇";
+    document.getElementById("sound-btn").addEventListener("click", () => {
+      soundOn = !soundOn;
+      localStorage.setItem("quizSound", soundOn);
+      document.getElementById("sound-btn").textContent = soundOn ? "🔊" : "🔇";
+    });
+
+    // Logout
+    document.getElementById("logout-btn").addEventListener("click", () => AUTH.logout());
+  </script>
+</body>
+</html>

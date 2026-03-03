@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>QuizPro – Review Answers</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body class="review-page">
+
+  <!-- Loading -->
+  <div id="loading-screen">
+    <div class="loader-logo">⚡ QuizPro</div>
+    <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <span class="navbar-brand">⚡ QuizPro</span>
+    <div class="navbar-actions">
+      <button class="icon-btn" id="theme-toggle">🌙</button>
+      <button class="btn btn-ghost" onclick="window.location.href='result.html'" style="font-size:.8rem;padding:.4rem .9rem;">← Back to Results</button>
+    </div>
+  </nav>
+
+  <!-- Header -->
+  <div class="review-header page-enter">
+    <h1>📋 Answer Review</h1>
+    <div style="display:flex;gap:.6rem;flex-wrap:wrap;align-items:center">
+      <span style="background:var(--success);color:#166534;padding:.25rem .75rem;border-radius:99px;font-size:.78rem;font-weight:700">
+        ✓ Correct: <span id="correct-count">0</span>
+      </span>
+      <span style="background:var(--danger);color:#991b1b;padding:.25rem .75rem;border-radius:99px;font-size:.78rem;font-weight:700">
+        ✗ Wrong: <span id="wrong-count">0</span>
+      </span>
+    </div>
+  </div>
+
+  <!-- Review body -->
+  <div class="review-body" id="review-body">
+    <!-- Populated by JS -->
+  </div>
+
+  <!-- Bottom actions -->
+  <div style="max-width:860px;margin:1.5rem auto 3rem;padding:0 1.5rem;display:flex;gap:.75rem;flex-wrap:wrap">
+    <button class="btn btn-primary" onclick="window.location.href='quiz.html'">🔄 Retake Quiz</button>
+    <button class="btn btn-ghost"   onclick="window.location.href='dashboard.html'">🏠 Dashboard</button>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/data.js"></script>
+  <script>
+    setTimeout(() => document.getElementById("loading-screen").classList.add("hidden"), 900);
+    AUTH.requireAuth();
+
+    const savedTheme = localStorage.getItem("quizTheme") || "light";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    document.getElementById("theme-toggle").textContent = savedTheme === "dark" ? "☀️" : "🌙";
+
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+      const cur = document.documentElement.getAttribute("data-theme");
+      const nxt = cur === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", nxt);
+      localStorage.setItem("quizTheme", nxt);
+      document.getElementById("theme-toggle").textContent = nxt === "dark" ? "☀️" : "🌙";
+    });
+
+    // Load data
+    const questions  = JSON.parse(localStorage.getItem("quizQuestions") || "[]");
+    const answers    = JSON.parse(localStorage.getItem("quizAnswers")   || "{}");
+
+    if (!questions.length) {
+      window.location.href = "dashboard.html";
+    }
+
+    let correctCount = 0;
+    let wrongCount   = 0;
+
+    const body = document.getElementById("review-body");
+
+    questions.forEach((q, i) => {
+      const userAns    = answers[i];
+      const isAnswered = userAns !== undefined;
+      const isCorrect  = isAnswered && userAns === q.answer;
+
+      if (isCorrect) correctCount++;
+      else wrongCount++;
+
+      const card = document.createElement("div");
+      card.className = "review-q-card card";
+      card.style.animationDelay = (i * 0.06) + "s";
+
+      const statusIcon  = isCorrect ? "✅" : isAnswered ? "❌" : "⏭️";
+      const statusLabel = isCorrect ? "Correct" : isAnswered ? "Wrong" : "Skipped";
+
+      let optionsHTML = "";
+      q.options.forEach((opt, j) => {
+        let cls = "review-option neutral";
+        let tag = "";
+        let badge = String.fromCharCode(65 + j);
+
+        if (j === q.answer) {
+          cls = "review-option correct";
+          tag = `<span class="review-tag correct">✓ Correct</span>`;
+        } else if (isAnswered && j === userAns && !isCorrect) {
+          cls = "review-option wrong";
+          tag = `<span class="review-tag wrong">✗ Your Answer</span>`;
+        }
+
+        optionsHTML += `
+          <div class="${cls}">
+            <span class="review-opt-badge">${badge}</span>
+            <span style="flex:1">${opt}</span>
+            ${tag}
+          </div>`;
+      });
+
+      card.innerHTML = `
+        <div class="review-q-num">Question ${i + 1} &nbsp;·&nbsp; ${statusIcon} ${statusLabel}</div>
+        <div class="review-q-text">${q.question}</div>
+        <div class="review-options">${optionsHTML}</div>
+        ${q.explanation ? `
+          <div class="review-explanation">
+            <strong>💡 Explanation:</strong> ${q.explanation}
+          </div>` : ""}
+      `;
+
+      body.appendChild(card);
+    });
+
+    document.getElementById("correct-count").textContent = correctCount;
+    document.getElementById("wrong-count").textContent   = wrongCount;
+  </script>
+</body>
+</html>

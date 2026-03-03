@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>QuizPro – Results</title>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body class="result-page">
+
+  <!-- Loading -->
+  <div id="loading-screen">
+    <div class="loader-logo">⚡ Calculating…</div>
+    <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <span class="navbar-brand">⚡ QuizPro</span>
+    <div class="navbar-actions">
+      <button class="icon-btn" id="theme-toggle">🌙</button>
+      <button class="icon-btn" onclick="window.location.href='dashboard.html'" title="Dashboard">🏠</button>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <div class="result-hero page-enter">
+    <h1>Your Results 🎯</h1>
+    <p style="color:var(--text-muted);font-size:.88rem;margin-top:.3rem" id="result-category">–</p>
+  </div>
+
+  <!-- Score + Chart -->
+  <div class="result-body page-enter" style="animation-delay:.1s">
+
+    <div class="card result-score-card">
+      <p style="font-size:.75rem;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);font-weight:600">Your Score</p>
+      <div class="score-display">
+        <span id="score-value">0</span>
+        <span class="score-sep">/</span>
+        <span id="score-total">0</span>
+      </div>
+      <div id="result-badge" class="result-badge pass">—</div>
+      <div class="result-meta">
+        <span>⏱ Time: <strong id="time-taken">—</strong></span>
+        <span>📊 Passing: 60%</span>
+      </div>
+    </div>
+
+    <div class="card result-canvas-card">
+      <p style="font-size:.75rem;text-transform:uppercase;letter-spacing:.8px;color:var(--text-muted);font-weight:600;margin-bottom:.8rem">Score Breakdown</p>
+      <canvas id="result-canvas" width="180" height="180"></canvas>
+      <div class="pct-label">Percentage scored</div>
+    </div>
+
+  </div>
+
+  <!-- Actions -->
+  <div class="result-actions page-enter" style="animation-delay:.2s">
+    <button class="btn btn-primary" onclick="window.location.href='review.html'">
+      📋 Review Answers
+    </button>
+    <button class="btn btn-accent" onclick="restartQuiz()">
+      🔄 Retake Quiz
+    </button>
+    <button class="btn btn-ghost" onclick="window.location.href='dashboard.html'">
+      🏠 Dashboard
+    </button>
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="result-leaderboard page-enter" style="animation-delay:.3s">
+    <p class="section-title">🏆 Top Scores</p>
+    <div class="card mt-2">
+      <div class="lb-table-wrap" style="padding:1.2rem">
+        <table class="lb-table">
+          <thead>
+            <tr><th>#</th><th>Player</th><th>Quiz</th><th>Score</th><th>Pct</th></tr>
+          </thead>
+          <tbody id="leaderboard-body">
+            <tr><td colspan="5" class="lb-empty">No entries yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/result.js"></script>
+  <script>
+    setTimeout(() => document.getElementById("loading-screen").classList.add("hidden"), 1000);
+
+    AUTH.requireAuth();
+
+    const savedTheme = localStorage.getItem("quizTheme") || "light";
+    document.documentElement.setAttribute("data-theme", savedTheme);
+    document.getElementById("theme-toggle").textContent = savedTheme === "dark" ? "☀️" : "🌙";
+
+    ResultPage.init();
+
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+      const cur = document.documentElement.getAttribute("data-theme");
+      const nxt = cur === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", nxt);
+      localStorage.setItem("quizTheme", nxt);
+      document.getElementById("theme-toggle").textContent = nxt === "dark" ? "☀️" : "🌙";
+    });
+
+    function restartQuiz() {
+      window.location.href = "quiz.html";
+    }
+  </script>
+</body>
+</html>

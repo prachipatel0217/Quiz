@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QuizPro - Sign In</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* Dark-mode toggle on login page sits at top-right */
+    .login-top-bar {
+      position: fixed; top: 1rem; right: 1.2rem; z-index: 200;
+      display: flex; gap: .6rem;
+    }
+  </style>
+</head>
+<body class="login-page">
+
+  <!-- Loading screen -->
+  <div id="loading-screen">
+    <div class="loader-logo">⚡ QuizPro</div>
+    <div class="loader-bar"><div class="loader-bar-fill"></div></div>
+  </div>
+
+  <div class="login-top-bar">
+    <button class="icon-btn" id="theme-toggle" title="Toggle dark mode">🌙</button>
+  </div>
+
+  <div class="login-card card card-glass">
+    <div class="login-logo">
+      <div class="login-logo-icon">⚡</div>
+      <h1 class="login-title">QuizPro</h1>
+      <p class="login-subtitle">Your premium examination platform</p>
+    </div>
+
+    <form id="login-form" autocomplete="off">
+      <div class="input-group">
+        <input type="text" id="username" placeholder=" " autocomplete="off" required />
+        <label for="username">Your Name / Username</label>
+        <span class="input-icon">👤</span>
+      </div>
+
+      <div class="input-group">
+        <input type="password" id="password" placeholder=" " autocomplete="off" required />
+        <label for="password">Password (any value)</label>
+        <span class="input-icon">🔒</span>
+      </div>
+
+      <div id="error-msg" style="color:#ef4444;font-size:.82rem;margin-bottom:.8rem;display:none;">
+        Please enter a valid username (min 2 characters).
+      </div>
+
+      <button type="submit" class="btn btn-primary login-btn">Sign In →</button>
+    </form>
+
+    <p class="login-footer">Demo: enter any name • password is not verified<br>
+      <span style="opacity:.6;">© 2025 QuizPro  –  Premium Learning</span>
+    </p>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script>
+    // Hide loading after 1.6 s
+    setTimeout(() => {
+      document.getElementById("loading-screen").classList.add("hidden");
+    }, 1700);
+
+    // Redirect if already logged in
+    AUTH.redirectIfLoggedIn();
+
+    // Dark mode
+    const themeBtn = document.getElementById("theme-toggle");
+    const saved    = localStorage.getItem("quizTheme") || "light";
+    document.documentElement.setAttribute("data-theme", saved);
+    themeBtn.textContent = saved === "dark" ? "☀️" : "🌙";
+    themeBtn.addEventListener("click", () => {
+      const cur = document.documentElement.getAttribute("data-theme");
+      const nxt = cur === "dark" ? "light" : "dark";
+      document.documentElement.setAttribute("data-theme", nxt);
+      localStorage.setItem("quizTheme", nxt);
+      themeBtn.textContent = nxt === "dark" ? "☀️" : "🌙";
+    });
+
+    // Login form
+    document.getElementById("login-form").addEventListener("submit", e => {
+      e.preventDefault();
+      const uname = document.getElementById("username").value.trim();
+      const errEl = document.getElementById("error-msg");
+      if (AUTH.login(uname)) {
+        errEl.style.display = "none";
+        window.location.href = "dashboard.html";
+      } else {
+        errEl.style.display = "block";
+      }
+    });
+  </script>
+</body>
+</html>
